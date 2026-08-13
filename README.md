@@ -8,11 +8,21 @@ web view.
 
 ## Status
 
-**Editing works.** Live-preview styling over the raw source, undo, ⌘F, open and
-save. 82 checks green.
+**Two modes, both working.** 127 checks green.
 
-Not there yet: incremental re-parse (see [Performance](#performance)), tables
-rendered as tables, and the vault layer — palette, search, backlinks.
+- **Edit** (default) — live-preview styling layered over the raw source. Syntax
+  markers are *dimmed, not hidden*: hiding them would change line width, so text
+  would reflow every time the cursor crossed a line.
+- **Read** (⌘E, or `--read`) — text rebuilt from the AST with the syntax gone.
+  Real bullets, hanging indents, task checkboxes, aligned tables, frontmatter as
+  a metadata header. Concealment is right here and wrong in the editor, because
+  with no cursor there is no reflow to cause.
+
+Not there yet: incremental re-parse (see [Performance](#performance)), tables as
+properly laid-out tables rather than aligned monospace, and the vault layer — palette,
+search, backlinks. Wikilinks are styled but not yet navigable: there is no vault
+to resolve them against, and a link that looks live but does nothing is worse
+than one that merely looks distinct.
 
 An earlier GPUI/Rust prototype rendered and streamed from Neovim; it lives in git
 history at `d96c8c4` and was replaced by this Swift line — see
@@ -22,16 +32,19 @@ history at `d96c8c4` and was replaced by this Swift line — see
 
 Honest numbers, measured on a real page:
 
-| page | spans | full restyle |
-| --- | --- | --- |
-| 34 KB (`azti.md`) | 953 | ~77 ms |
-| 112 KB (`bildu.md`) | 4,638 | not yet measured in-app |
+| page | spans | edit-mode restyle | read-mode render |
+| --- | --- | --- | --- |
+| 34 KB (`azti.md`) | 953 | ~75 ms | ~39 ms |
+| 112 KB (`bildu.md`) | 4,638 | not yet measured in-app | — |
 
 Every keystroke currently triggers a whole-document reparse and reattribute,
 debounced by 40 ms. That is fine on short notes and **visibly laggy** on a 34 KB
 page, so incremental re-parse over the dirty paragraph range is the next real
 piece of work rather than an optimisation to get to eventually. The parser's
 source ranges are what make it tractable.
+
+Reading mode's ~39 ms is not on the keystroke path — it renders once per document
+change — so it needs no such work.
 
 ## Layout
 
@@ -46,9 +59,10 @@ assets/welcome.md    doubles as the render smoke test
 ## Build
 
 ```sh
-./build.sh               # assembles .build/orri.app
-open .build/orri.app
-swift run orri-check     # 82 checks
+./build.sh                              # assembles .build/orri.app
+open .build/orri.app --args note.md     # edit mode
+open .build/orri.app --args note.md --read
+swift run orri-check                    # 127 checks
 ```
 
 The `.app` bundle is not optional. Run as a bare Mach-O binary, SwiftUI's

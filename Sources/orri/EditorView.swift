@@ -57,7 +57,14 @@ struct RootView: View {
     @ObservedObject var document: DocumentModel
 
     var body: some View {
-        MarkdownEditor(document: document)
-            .ignoresSafeArea(edges: .top)
+        Group {
+            switch document.mode {
+            case .edit:
+                MarkdownEditor(document: document)
+            case .read:
+                ReadingPane(document: document)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
     }
 }

@@ -136,6 +136,27 @@ struct ReadingTheme {
             // Real table layout comes later; monospace at least aligns the pipes.
             return [.font: Fonts.mono(bodySize - 2)]
 
+        case .listItem(let level):
+            // Hanging indent: the bullet sits in the margin and wrapped lines
+            // align with the text, not back under the marker.
+            let style = NSMutableParagraphStyle()
+            style.lineHeightMultiple = lineHeightMultiple
+            let indent = CGFloat(level + 1) * 22
+            style.firstLineHeadIndent = indent - 22
+            style.headIndent = indent
+            style.tabStops = [NSTextTab(textAlignment: .left, location: indent)]
+            style.defaultTabInterval = indent
+            return [.paragraphStyle: style]
+
+        case .listBullet:
+            return [.foregroundColor: NSColor.tertiaryLabelColor]
+
+        case .tableHeader:
+            return [
+                .font: Fonts.mono(bodySize - 2, weight: .semibold),
+                .foregroundColor: text,
+            ]
+
         case .syntaxMarker:
             // Colour is decided per-span by the view, which knows the cursor line.
             return [:]

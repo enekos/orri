@@ -20,6 +20,12 @@ public enum MarkdownToken: Equatable {
     case frontmatter
     case frontmatterKey
 
+    // Reading mode only: structure the source expresses with punctuation has to
+    // be re-expressed as layout once the punctuation is gone.
+    case listItem(level: Int)
+    case listBullet
+    case tableHeader
+
     /// Punctuation that *is* markdown syntax — `##`, `**`, backticks, `>`, list
     /// bullets, link brackets. The editor dims these unless the cursor is on
     /// their line.

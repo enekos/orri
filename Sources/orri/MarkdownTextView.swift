@@ -11,9 +11,7 @@ import OrriKit
 /// Markers are dimmed rather than hidden on purpose: hiding changes line width,
 /// so text would visibly reflow every time the cursor crossed a line. Dimming
 /// reads as calm and keeps the source honest.
-final class MarkdownTextView: NSTextView {
-    private var theme: ReadingTheme = .standard
-
+final class MarkdownTextView: MeasuredTextView {
     private var spans: [StyleSpan] = []
     private var lineMap = LineMap("")
     private var revealedLine: Int?
@@ -22,30 +20,9 @@ final class MarkdownTextView: NSTextView {
     private var isStyling = false
     private var pendingRestyle: DispatchWorkItem?
 
-    // NSTextView has two designated initialisers, and AppKit picks either one
-    // internally. Both must be overridden or instantiation traps at runtime with
-    // "use of unimplemented initializer".
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        configure()
-    }
+    override func configure() {
+        super.configure()
 
-    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
-        super.init(frame: frameRect, textContainer: container)
-        configure()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("orri does not load text views from a nib")
-    }
-
-    func use(theme: ReadingTheme) {
-        self.theme = theme
-        configure()
-        restyle()
-    }
-
-    private func configure() {
         // Every one of these substitutions would silently corrupt markdown source:
         // `--` becoming an em dash, `"` becoming a curly quote.
         isAutomaticQuoteSubstitutionEnabled = false
@@ -61,54 +38,11 @@ final class MarkdownTextView: NSTextView {
         isEditable = true
         isSelectable = true
 
-        // Gives ⌘F a real find bar without implementing search ourselves.
-        usesFindBar = true
-        isIncrementalSearchingEnabled = true
-
-        drawsBackground = true
-        backgroundColor = .textBackgroundColor
         insertionPointColor = theme.accent
-        textContainerInset = NSSize(width: theme.minGutter, height: theme.topInset)
-
-        isVerticallyResizable = true
-        isHorizontallyResizable = false
-        autoresizingMask = [.width]
-        textContainer?.widthTracksTextView = true
-        textContainer?.lineFragmentPadding = 0
-
         typingAttributes = theme.baseAttributes
     }
 
     // MARK: - Measure
-
-    /// Centres the reading measure by growing the side insets.
-    ///
-    /// Driven by the *clip view's* width, and deliberately not from `layout()`.
-    /// Changing `textContainerInset` invalidates layout, and this view's own
-    /// `bounds` depend on that inset — so computing the inset from `bounds`
-    /// inside `layout()` is a feedback loop that can oscillate instead of
-    /// settling, especially across displays with different backing scales.
-    /// The clip view's width is unaffected by our inset, which breaks the cycle.
-    override func viewDidMoveToSuperview() {
-        super.viewDidMoveToSuperview()
-        guard let clipView = superview else { return }
-        clipView.postsFrameChangedNotifications = true
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(updateMeasureInset),
-            name: NSView.frameDidChangeNotification, object: clipView)
-        updateMeasureInset()
-    }
-
-    @objc private func updateMeasureInset() {
-        guard let clipView = superview else { return }
-        let inset = max(theme.minGutter, (clipView.bounds.width - theme.measure) / 2)
-        guard abs(textContainerInset.width - inset) > 0.5 else { return }
-        textContainerInset = NSSize(width: inset, height: theme.topInset)
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
 
     // MARK: - Styling
 

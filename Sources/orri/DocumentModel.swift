@@ -9,19 +9,40 @@ import Foundation
 final class DocumentModel: ObservableObject {
     static let shared = DocumentModel()
 
+    /// Which surface is showing.
+    ///
+    /// Two modes rather than three: the editor already styles as you type, so a
+    /// separate "source" mode would only differ by having no styling at all.
+    enum Mode {
+        case edit
+        case read
+    }
+
+    @Published var mode: Mode = .edit
     @Published var text: String = ""
     @Published private(set) var url: URL?
     @Published private(set) var hasUnsavedChanges = false
 
     private init() {}
 
+    func toggleMode() {
+        mode = (mode == .edit) ? .read : .edit
+    }
+
     var displayName: String {
         url?.lastPathComponent ?? "Untitled"
     }
 
     /// Loads the file named on the command line, or the bundled welcome page.
+    ///
+    /// `--read` opens straight into reading mode, which is what you want when
+    /// opening a page to read rather than to edit.
     func loadInitial() {
-        let arguments = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }
+        let all = CommandLine.arguments.dropFirst()
+        if all.contains("--read") {
+            mode = .read
+        }
+        let arguments = all.filter { !$0.hasPrefix("-") }
 
         if let path = arguments.first {
             let candidate = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)

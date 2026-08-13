@@ -120,6 +120,7 @@ enum MainMenu {
         root.addItem(appMenu())
         root.addItem(fileMenu())
         root.addItem(editMenu())
+        root.addItem(viewMenu())
 
         return root
     }
@@ -170,6 +171,16 @@ enum MainMenu {
         return item
     }
 
+    private static func viewMenu() -> NSMenuItem {
+        let (item, menu) = container("View")
+        // ⌘E to match Obsidian, which is the gesture this audience already has.
+        let toggle = menu.addItem(
+            withTitle: "Toggle Reading Mode",
+            action: #selector(DocumentActions.toggleMode(_:)), keyEquivalent: "e")
+        toggle.target = DocumentActions.shared
+        return item
+    }
+
     private static func editMenu() -> NSMenuItem {
         let (item, menu) = container("Edit")
 
@@ -208,5 +219,9 @@ final class DocumentActions: NSObject {
 
     @objc func saveDocumentAs(_ sender: Any?) {
         DocumentModel.shared.saveAs()
+    }
+
+    @objc func toggleMode(_ sender: Any?) {
+        DocumentModel.shared.toggleMode()
     }
 }
