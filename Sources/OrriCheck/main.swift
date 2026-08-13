@@ -2,4 +2,5 @@
 runLineMapChecks()
 runFrontmatterChecks()
 runWikilinkChecks()
+runStylerChecks()
 Check.report()

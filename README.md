@@ -8,10 +8,30 @@ web view.
 
 ## Status
 
-**Foundation, no UI yet.** `OrriKit` is written and verified (57 checks). The
-editor surface is next. An earlier GPUI/Rust prototype rendered and streamed
-from Neovim; it lives in git history at `d96c8c4` and was replaced by this Swift
-line — see [Why Swift](#why-swift).
+**Editing works.** Live-preview styling over the raw source, undo, ⌘F, open and
+save. 82 checks green.
+
+Not there yet: incremental re-parse (see [Performance](#performance)), tables
+rendered as tables, and the vault layer — palette, search, backlinks.
+
+An earlier GPUI/Rust prototype rendered and streamed from Neovim; it lives in git
+history at `d96c8c4` and was replaced by this Swift line — see
+[Why Swift](#why-swift).
+
+## Performance
+
+Honest numbers, measured on a real page:
+
+| page | spans | full restyle |
+| --- | --- | --- |
+| 34 KB (`azti.md`) | 953 | ~77 ms |
+| 112 KB (`bildu.md`) | 4,638 | not yet measured in-app |
+
+Every keystroke currently triggers a whole-document reparse and reattribute,
+debounced by 40 ms. That is fine on short notes and **visibly laggy** on a 34 KB
+page, so incremental re-parse over the dirty paragraph range is the next real
+piece of work rather than an optimisation to get to eventually. The parser's
+source ranges are what make it tractable.
 
 ## Layout
 
@@ -26,9 +46,17 @@ assets/welcome.md    doubles as the render smoke test
 ## Build
 
 ```sh
-swift build
-swift run orri-check     # 57 checks
+./build.sh               # assembles .build/orri.app
+open .build/orri.app
+swift run orri-check     # 82 checks
 ```
+
+The `.app` bundle is not optional. Run as a bare Mach-O binary, SwiftUI's
+`WindowGroup` never materialises a window — the process launches, stays alive,
+and shows nothing. For the same reason the app drives `NSApplication` directly
+and hosts SwiftUI in an `NSHostingController`, rather than using the SwiftUI
+`App` lifecycle. Logs go to `~/Library/Logs/orri.log`, since a bundled app has no
+terminal.
 
 ### Two Xcode constraints worth knowing
 

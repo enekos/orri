@@ -23,7 +23,7 @@ let package = Package(
             name: "orri",
             dependencies: ["OrriKit"],
             path: "Sources/orri",
-            resources: [.copy("Fonts")],
+            resources: [.copy("Fonts"), .copy("Welcome.md")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         // Checks live in an executable, not a test target: XCTest and
