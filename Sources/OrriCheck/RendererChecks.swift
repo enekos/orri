@@ -136,10 +136,24 @@ private func checkFrontmatterBecomesAHeader() {
 
     Check.expect(!rendered.text.contains("---"), "frontmatter fences removed")
     Check.expect(rendered.text.contains("eñe — 日本語"), "multibyte value preserved")
+    // `status` is the widest key (6), so `title` pads to 6 plus the separator.
     Check.equal(
-        firstSlice(rendered) { $0 == .frontmatterKey }, "title  ",
-        "key rendered without its colon")
+        firstSlice(rendered) { $0 == .frontmatterKey }, "title   ",
+        "key padded to the widest field")
     Check.expect(rendered.text.contains("Body"), "body still rendered after frontmatter")
+
+    // Padding is only worth anything if every row's value starts in the same
+    // column.
+    let rows = rendered.text.split(separator: "\n").map(String.init)
+    let valueColumns = ["title", "status"].compactMap { key -> Int? in
+        guard let row = rows.first(where: { $0.hasPrefix(key) }),
+            let keyEnd = row.range(of: key)?.upperBound,
+            let valueStart = row[keyEnd...].firstIndex(where: { $0 != " " })
+        else { return nil }
+        return row.distance(from: row.startIndex, to: valueStart)
+    }
+    Check.equal(valueColumns.count, 2, "both frontmatter rows found")
+    Check.equal(valueColumns.first, valueColumns.last, "frontmatter values share a column")
 
     // A `links:` field is nothing but wikilinks, so leaving them raw would show
     // brackets in the one place they're most common.

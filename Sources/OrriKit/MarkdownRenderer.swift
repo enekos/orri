@@ -25,11 +25,16 @@ public enum MarkdownRenderer {
         var body = source
         if let matter = FrontmatterParser.parse(source) {
             // Rendered as a compact key/value header rather than dropped: on a
-            // wiki page the frontmatter *is* the page's identity.
+            // wiki page the frontmatter *is* the page's identity. Keys pad to
+            // the widest field so values share a column — the block sets mono,
+            // so the alignment lands.
             let start = builder.length
+            let keyWidth = matter.fields.map(\.key.count).max() ?? 0
             for field in matter.fields {
                 let keyStart = builder.length
-                builder.append("\(field.key)  ")
+                let padded = field.key.padding(toLength: keyWidth, withPad: " ", startingAt: 0)
+                // A valueless field gets no separator, or it trails whitespace.
+                builder.append(field.value.isEmpty ? padded : padded + "  ")
                 builder.span(.frontmatterKey, from: keyStart)
                 // Values carry wikilinks too — a `links:` field is nothing but
                 // wikilinks — so they need resolving like any other text.
